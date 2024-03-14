@@ -5,6 +5,7 @@
 # 14 Mar 2024
 #-----------------------------------------------------------
 # Description: Simple calculator
+# Python 3.9
 #__________________________________________________________________________________________
 
 
@@ -18,9 +19,37 @@ class Calculator:
     eList=None
     result = 0
 
-    def __init__(self, expression=""):
-        if (len(expression)>0):
+    def __init__(self):
+        print("""\
+ _____       _            _       _             
+/  __ \     | |          | |     | |            
+| /  \/ __ _| | ___ _   _| | __ _| |_ ___  _ __ 
+| |    / _` | |/ __| | | | |/ _` | __/ _ \| '__|
+| \__/\ (_| | | (__| |_| | | (_| | || (_) | |   
+ \____/\__,_|_|\___|\__,_|_|\__,_|\__\___/|_|   
+
+                    """)
+        self.PrintInstructions();
+         
+    def PrintInstructions(self):
+        print("""\
+        This Calculator can process operations with + - * / ^ ( ) and will respect their priority 
+        It accepts integers, floats and negative numbers
+        'test' : Will do a unit test using "files/tests.txt"
+        _______________________________________________________
+                    """)
+        
+        print("example:")
+        self.Calculate("3+3^2*4(-2.5+9/3)")
+        self.GetInput()
+
+    def GetInput(self):
+        expression = input("Enter expression:")
+        if (expression=="test"):
+            self.UnitTest("files/tests.txt")
+        else:
             self.Calculate(expression)
+        self.GetInput()
 
     def Calculate(self, e): 
         self.eStr = e
@@ -28,7 +57,7 @@ class Calculator:
         self.eList= self.__SplitExpression()
         if(self.__TestValidExpression()):
             self.__CalculateExpression()
-            print ("Solution: "+str(self.result))
+            print ("Solution: "+str(self.result)+"\n")
 
     def __TestValidExpression(self):      
         # Has any character that is not our symbols .(dot) and digits
@@ -44,12 +73,25 @@ class Calculator:
 
     def __SplitExpression(self):
         #split with lookbehind and lookahead, they match to a position not to characters
+        #e_parts = re.split("(?<=["+self.splitSymbols+"])|(?=["+self.splitSymbols+"])",self.eStr)
         e_parts = re.split("(?<=["+self.splitSymbols+"])|(?=["+self.splitSymbols+"])",self.eStr)
-        #the split could return empty slots in the first and last position, remove them if needed
+
+        #the split could return emty slots in the frst and last position, remove them if needed
         if(e_parts[0]==''):
             del(e_parts[0])
         if(e_parts[-1]==''):
             del(e_parts[-1])
+
+        # Detect negative numbers
+        for x in range(len(e_parts)-1,0,-1):
+            if e_parts[x] == '-':
+                combine=False
+                if(x-1<0): combine = True
+                elif re.match("[-+*/^(]",e_parts[x-1]): combine = True
+                if combine: 
+                    e_parts[x] = e_parts[x]+e_parts[x+1]
+                    del e_parts[x+1]
+
         # Make float what can be float
         for index, item in enumerate(e_parts):
             try:
@@ -67,7 +109,11 @@ class Calculator:
             elif e[1]=="*":
                 self.result =  e[0]*e[2]
             elif e[1]=="/":
-                self.result =  e[0]/e[2]
+                try: 
+                    self.result =  e[0]/e[2]
+                except: 
+                    self.result = None
+                    print("Error: Zero Division")
             elif e[1]=="^":
                 self.result =  pow(e[0],e[2])
             return self.result
@@ -101,9 +147,18 @@ class Calculator:
                 operatorIdx = x
                 priority=3
 
+        # Clean parenthesis containing juts a number and Apply simple operations
         if(endPthsIdx-startPthsIdx == 2):
-            self.eList[startPthsIdx] = self.eList[startPthsIdx+1]
-            del self.eList[startPthsIdx+1:endPthsIdx+1]
+            multiply = False
+            # If the parenthesis if preceded by another number
+            if(startPthsIdx>0):
+                if type(self.eList[startPthsIdx-1]) is float: 
+                    self.eList[startPthsIdx] = '*'
+                    multiply = True
+
+            del self.eList[endPthsIdx]
+            if not multiply: del self.eList[startPthsIdx]
+
         elif(operatorIdx!=None):
             result = self.__CalculateSimpleExpression(self.eList[operatorIdx-1:operatorIdx+2])
             self.eList[operatorIdx-1]=result
@@ -133,8 +188,6 @@ class Calculator:
 
 def main():
     c = Calculator()
-    c.Calculate("5+3*(4-6/(3))")
-    c.UnitTest("files/tests.txt")
 
 if __name__ == "__main__":
     main()
