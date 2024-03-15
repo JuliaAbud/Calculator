@@ -4,14 +4,14 @@
 # juliarabud@gmail.com
 # 14 Mar 2024
 #-----------------------------------------------------------
-# Description: Simple calculator
+# Description: Simple calculator that keeps the infix expession always
 # Python 3.9
 #__________________________________________________________________________________________
 
 
 import re
 
-class Calculator:
+class CalculatorInfixDirect:
 
     debug = True
     splitSymbols = "-+*/^()"
@@ -27,7 +27,7 @@ class Calculator:
 | |    / _` | |/ __| | | | |/ _` | __/ _ \| '__|
 | \__/\ (_| | | (__| |_| | | (_| | || (_) | |   
  \____/\__,_|_|\___|\__,_|_|\__,_|\__\___/|_|   
-
+                              Infix expression (Direct)
                     """)
         self.PrintInstructions();
          
@@ -35,7 +35,12 @@ class Calculator:
         print("""\
         This Calculator can process operations with + - * / ^ ( ) and will respect their priority 
         It accepts integers, floats and negative numbers
-        'test' : Will do a unit test using "files/tests.txt"
+        'test' : Will do a unit test using "files/tests.txt
+        'exit' : Will exit this calculator and let you choose again
+        _______________________________________________________
+        This calculator will process directly from the infix expression without reorganizing. 
+        Advantages: To keep it infix makes it is easier to see the steps that were followed in a human-way.
+        Disadvanatge: Slower algorithm compared to using postfix as it needs to read the expression multiple times (once per operator)
         _______________________________________________________
                     """)
         
@@ -45,36 +50,36 @@ class Calculator:
 
     def GetInput(self):
         expression = input("Enter expression:")
-        if (expression=="test"):
-            self.UnitTest("files/tests.txt")
-        else:
-            self.Calculate(expression)
-        self.GetInput()
+        if(expression!="exit"):
+            if (expression=="test"):
+                self.UnitTest("files/tests.txt")
+            else:
+                self.Calculate(expression)
+            self.GetInput()
 
     def Calculate(self, e): 
         self.eStr = e
         print('Infix expression: ', self.eStr )
-        self.eList= self.__SplitExpression()
-        if(self.__TestValidExpression()):
+        self.eList= self.__SplitExpression(self.eStr)
+        if(self.__TestValidExpression(self.eStr)):
             self.__CalculateExpression()
             print ("Solution: "+str(self.result)+"\n")
 
-    def __TestValidExpression(self):      
+    def __TestValidExpression(self,exprStr):      
         # Has any character that is not our symbols .(dot) and digits
-        invalidSymbols = re.findall("[^"+self.splitSymbols+".0-9]",self.eStr)
+        invalidSymbols = re.findall("[^"+self.splitSymbols+".0-9]",exprStr)
         if len(invalidSymbols)>0 : 
             print("There is at least one invalid character in the expression. Please check.")
             return False
         # Has same amount of right and left parentheses
-        if len(re.findall("[(]",self.eStr)) != len(re.findall("[)]",self.eStr)): 
+        if len(re.findall("[(]",exprStr)) != len(re.findall("[)]",exprStr)): 
             print("There is not an equal amount of right and left parentheses. Please check.")
             return False
         return True
 
-    def __SplitExpression(self):
+    def __SplitExpression(self,e):
         #split with lookbehind and lookahead, they match to a position not to characters
-        #e_parts = re.split("(?<=["+self.splitSymbols+"])|(?=["+self.splitSymbols+"])",self.eStr)
-        e_parts = re.split("(?<=["+self.splitSymbols+"])|(?=["+self.splitSymbols+"])",self.eStr)
+        e_parts = re.split("(?<=["+self.splitSymbols+"])|(?=["+self.splitSymbols+"])",e)
 
         #the split could return emty slots in the frst and last position, remove them if needed
         if(e_parts[0]==''):
@@ -184,10 +189,3 @@ class Calculator:
             print('-------------------------')
         testFile.close()
 
-
-
-def main():
-    c = Calculator()
-
-if __name__ == "__main__":
-    main()
